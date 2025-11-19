@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALTA-艾科坦核心经销商查询</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1677ff',
+            secondary: '#0958d9',
+            neutral: '#f5f5f5',
+            dark: '#333333'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .search-shadow {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      .result-hover {
+        transition: all 0.2s ease;
+      }
+      .result-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark">
+  <!-- 顶部导航 -->
+  <header class="bg-primary text-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-xl md:text-2xl font-bold flex items-center">
+        <i class="fa fa-search mr-2"></i>核心经销商查询
+      </h1>
+      <div class="text-sm opacity-90">
+        <i class="fa fa-info-circle"></i> 公开查询服务
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-6 md:py-10">
+    <!-- 查询区域 -->
+    <section class="mb-8">
+      <div class="bg-white rounded-lg p-5 search-shadow">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">请输入客户名称查询</h2>
+        
+        <div class="relative">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="输入客户名称关键词..." 
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+          >
+          
+          <button 
+            id="searchBtn" 
+            class="absolute right-1 top-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors"
+          >
+            <i class="fa fa-search mr-1"></i> 查询
+          </button>
+        </div>
+        
+        <div id="suggestions" class="absolute left-4 right-4 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-10 max-h-60 overflow-y-auto"></div>
+      </div>
+    </section>
+
+    <!-- 结果展示区域 -->
+    <section id="resultsSection" class="mb-8 hidden">
+      <div class="bg-white rounded-lg p-5 search-shadow">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-700">
+            <i class="fa fa-list-alt mr-2"></i>查询结果
+          </h2>
+          <span id="resultCount" class="text-sm bg-gray-100 px-2 py-1 rounded-full"></span>
+        </div>
+        
+        <div id="resultsContainer" class="space-y-4"></div>
+        
+        <div id="noResults" class="py-10 text-center hidden">
+          <i class="fa fa-search-minus text-4xl text-gray-300 mb-3"></i>
+          <p class="text-gray-500">未找到相关经销商信息，请尝试其他关键词</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 客户留言区域（修复后） -->
+    <section class="mb-8">
+      <div class="bg-white rounded-lg p-5 search-shadow">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">
+          <i class="fa fa-comments mr-2"></i>客户留言
+        </h2>
+        
+        <!-- 表单配置Formspree链接 -->
+        <form 
+          id="messageForm" 
+          action="https://formspree.io/f/xrbjgokn" 
+          method="POST"
+          class="space-y-4"
+        >
+          <!-- 姓名输入 -->
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">您的姓名</label>
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              placeholder="请输入您的姓名"
+            >
+          </div>
+          
+          <!-- 联系方式输入 -->
+          <div>
+            <label for="contact" class="block text-sm font-medium text-gray-700 mb-1">联系方式</label>
+            <input 
+              type="text" 
+              id="contact" 
+              name="contact" 
+              required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              placeholder="请输入电话或邮箱"
+            >
+          </div>
+          
+          <!-- 留言内容输入 -->
+          <div>
+            <label for="message" class="block text-sm font-medium text-gray-700 mb-1">留言内容</label>
+            <textarea 
+              id="message" 
+              name="message" 
+              rows="4" 
+              required
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
+              placeholder="请输入您的留言内容..."
+            ></textarea>
+          </div>
+          
+          <!-- 提交按钮 -->
+          <button 
+            type="submit" 
+            class="w-full bg-primary text-white px-4 py-3 rounded-lg hover:bg-secondary transition-colors font-medium"
+          >
+            <i class="fa fa-paper-plane mr-1"></i> 提交留言
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-gray-800 text-white py-6">
+    <div class="container mx-auto px-4 text-center text-sm opacity-80">
+      <p>© 2026 核心经销商查询系统 - 保留所有权利</p>
+      <p class="mt-1">本服务仅供查询使用，数据仅供参考</p>
+    </div>
+  </footer>
+
+  <!-- 成功提示弹窗 -->
+  <div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 transform transition-all">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fa fa-check text-2xl text-green-500"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">操作成功</h3>
+        <p id="modalMessage" class="text-gray-600 mb-6">您的留言已成功提交，我们会尽快与您联系</p>
+        <button id="closeModal" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
+          确定
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 模拟经销商数据
+    const dealers = [
+      {
+        id: 1,
+        name: "广东明丰能源科技有限公司",
+        code: "IC202602",
+        area: "广东省",
+        products: "胶衣（MAXGUARD,ENGUARD），不饱和聚酯树脂（AROPOL,POLARIS,MODAR,AME,AROTOOL）",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 0
+      },
+      {
+        id: 2,
+        name: "湛江祥兴复合材料有限公司",
+        code: "IC202604",
+        area: "广东湛江市、海南省及广西北部湾区域",
+        products: "环氧乙烯基酯树脂，不饱和聚酯树脂和胶衣产品",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 0
+      },
+      {
+        id: 3,
+        name: "河南春萌贸易有限公司",
+        code: "IC202607",
+        area: "河南省",
+        products: "胶衣（MAXGUARD,ENGUARD)",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 0
+      },
+      {
+        id: 4,
+        name: "江苏格林达国际贸易有限公司",
+        code: "IC202608",
+        area: "中国内地（除山东、四川、重庆、云南）区域",
+        products: "环氧乙烯基酯树脂（DERAKANE,HETRON)，不饱和聚酯树脂(AROPOL,AME,AROTOOL)",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 0
+      },
+      {
+        id: 5,
+        name: "常州市欣欣昌隆复合材料有限公司/常州欣欣复合材料有限公司",
+        code: "IC202612",
+        area: "辽宁省、河北省、浙江省及江苏省卫浴行业",
+        products: "环氧乙烯基酯树脂、不饱和聚酯树脂、胶衣产品",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 0
+      },
+      {
+        id: 6,
+        name: "广莫新材料科技（上海）有限公司",
+        code: "IC202614",
+        area: "山东省",
+        products: "环氧乙烯基酯树脂（DERAKANE,DERAKANE SIGNIA,HETRON）",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 103
+      },
+      {
+        id: 7,
+        name: "厦门圆岛贸易有限公司",
+        code: "IC202615",
+        area: "福建省",
+        products: "胶衣（MAXGUARD,ENGUARD,INSTINT）,不饱和聚酯树脂（AROPOL,AROTRAN,ENVIREZ,POLARIS,MODAR,AROTOOL）和环氧乙烯基酯树脂（AME,HETRON）  ",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 0
+      },
+      {
+        id: 8,
+        name: "常州芳越新材料有限公司",
+        code: "IC202616",
+        area: "湖北省、安徽省、江西省和江苏局部",
+        products: "胶衣、不饱和聚酯树脂和环氧乙烯基酯树脂（非防腐领域）产品  ",
+        authTime: "2026-01-01 至 2026-12-31",
+        searchCount: 0
+      }
+    ];
+
+    // DOM元素
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const suggestions = document.getElementById('suggestions');
+    const resultsSection = document.getElementById('resultsSection');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const resultCount = document.getElementById('resultCount');
+    const noResults = document.getElementById('noResults');
+    const messageForm = document.getElementById('messageForm');
+    const successModal = document.getElementById('successModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const closeModal = document.getElementById('closeModal');
+
+    // 模糊查询建议
+    searchInput.addEventListener('input', function() {
+      const query = this.value.trim().toLowerCase();
+      
+      if (query.length < 1) {
+        suggestions.classList.add('hidden');
+        return;
+      }
+      
+      const matches = dealers.filter(deal => 
+        deal.name.toLowerCase().includes(query)
+      );
+      
+      if (matches.length > 0) {
+        suggestions.innerHTML = '';
+        matches.slice(0, 6).forEach(deal => {
+          const item = document.createElement('div');
+          item.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer transition-colors';
+          item.textContent = deal.name;
+          item.addEventListener('click', () => {
+            searchInput.value = deal.name;
+            suggestions.classList.add('hidden');
+            performSearch();
+          });
+          suggestions.appendChild(item);
+        });
+        suggestions.classList.remove('hidden');
+      } else {
+        suggestions.innerHTML = '<div class="px-4 py-2 text-gray-500">没有找到匹配的结果</div>';
+        suggestions.classList.remove('hidden');
+      }
+    });
+
+    // 点击其他区域关闭建议框
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+        suggestions.classList.add('hidden');
+      }
+    });
+
+    // 搜索功能
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => e.key === 'Enter' && performSearch());
+
+    // 执行搜索
+    function performSearch() {
+      const query = searchInput.value.trim().toLowerCase();
+      
+      if (!query) {
+        showModal('请输入查询关键词');
+        return;
+      }
+      
+      const filtered = dealers.filter(deal => deal.name.toLowerCase().includes(query));
+      
+      // 更新搜索次数
+      filtered.forEach(deal => {
+        const index = dealers.findIndex(d => d.id === deal.id);
+        if (index !== -1) dealers[index].searchCount++;
+      });
+      
+      // 展示结果
+      resultsSection.classList.remove('hidden');
+      resultCount.textContent = `找到 ${filtered.length} 条结果`;
+      
+      if (filtered.length) {
+        resultsContainer.innerHTML = '';
+        noResults.classList.add('hidden');
+        
+        filtered.forEach(deal => {
+          const card = document.createElement('div');
+          card.className = 'border border-gray-200 rounded-lg p-4 result-hover';
+          card.innerHTML = `
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-lg font-semibold text-gray-800">${deal.name}</h3>
+              <span class="bg-blue-50 text-primary text-xs px-2 py-1 rounded-full">
+                搜索次数: ${deal.searchCount}
+              </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div class="flex"><span class="text-gray-500 w-24">授权代码:</span><span class="text-gray-700">${deal.code}</span></div>
+              <div class="flex"><span class="text-gray-500 w-24">授权区域:</span><span class="text-gray-700">${deal.area}</span></div>
+              <div class="flex"><span class="text-gray-500 w-24">授权产品:</span><span class="text-gray-700">${deal.products}</span></div>
+              <div class="flex"><span class="text-gray-500 w-24">授权时间:</span><span class="text-gray-700">${deal.authTime}</span></div>
+            </div>
+          `;
+          resultsContainer.appendChild(card);
+        });
+      } else {
+        resultsContainer.innerHTML = '';
+        noResults.classList.remove('hidden');
+      }
+      
+      resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 留言表单提交（Formspree处理）
+    messageForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // 显示加载状态
+      const submitBtn = messageForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> 提交中...';
+      
+      try {
+        const formData = new FormData(messageForm);
+        const response = await fetch(messageForm.action, {
+          method: messageForm.method,
+          body: formData,
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (response.ok) {
+          modalMessage.textContent = '留言已提交，我们会尽快与您联系';
+          successModal.classList.remove('hidden');
+          messageForm.reset();
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || '提交失败，请稍后再试');
+        }
+      } catch (err) {
+        modalMessage.textContent = err.message;
+        successModal.classList.remove('hidden');
+      } finally {
+        // 恢复按钮状态
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    });
+
+    // 关闭弹窗
+    closeModal.addEventListener('click', () => successModal.classList.add('hidden'));
+
+    // 显示提示弹窗
+    function showModal(message) {
+      modalMessage.textContent = message;
+      successModal.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
